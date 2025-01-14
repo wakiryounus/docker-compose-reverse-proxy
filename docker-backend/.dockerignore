@@ -1,0 +1,6 @@
+target/*.jar
+*.git
+*.idea
+*.mvn
+logs
+node_modules

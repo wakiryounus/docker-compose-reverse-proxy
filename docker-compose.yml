@@ -1,0 +1,36 @@
+services:
+  # Frontend Service: This service builds the frontend application from the specified Dockerfile.
+  # We are NOT exposing ports for the frontend service because:
+  # - The frontend is accessed through the Nginx service, which acts as a reverse proxy.
+  # - Keeping this service private ensures better security as it won't be directly accessible from the host.
+  frontend:
+    build:
+      context: ./docker-frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - backend # Ensure the backend starts before the frontend.
+
+  # Backend Service: This service builds the backend application from the specified Dockerfile.
+  # We are NOT exposing ports for the backend service because:
+  # - The backend is accessed only by the Nginx service within the private Docker network.
+  # - This prevents direct access to the backend from outside, adding a layer of security.
+  backend:
+    build:
+      context: ./docker-backend
+      dockerfile: Dockerfile
+
+  # Nginx Service: Acts as a reverse proxy to route traffic between the frontend and backend services.
+  # - Exposes port 80 to the host, making it the single entry point for external traffic.
+  # - Serves the frontend on `/` and proxies API requests (e.g., `/api`) to the backend.
+  # - Provides an abstraction layer, hiding the frontend and backend details from clients.
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80" # Maps port 80 on the host to port 80 in the Nginx container.
+    depends_on:
+      - frontend # Ensure the frontend starts before Nginx.
+      - backend  # Ensure the backend starts before Nginx.
+    volumes:
+      # Mounts the custom Nginx configuration file into the container.
+      # This file defines how Nginx routes requests to the frontend and backend.
+      - ./nginx.conf:/etc/nginx/nginx.conf
